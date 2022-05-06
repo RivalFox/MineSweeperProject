@@ -1,16 +1,17 @@
+
+
 import pygame
 from random import randrange
 import time
 
-"""GLOBAL VARIABLES"""
 
 white = (255, 255, 255)
-black = (0, 0, 0)
+Dviolet = (148, 0, 211)
 red = (255, 0, 0)
 dark_red = (200, 0, 0)
-purple = (173, 138, 255)
-blue = (0, 0, 255)
-green = (181, 255, 138)
+green = (0, 255, 0)
+yellow = (139, 139, 0)
+grey = (23, 23, 23)
 
 cellPixelWH = 50
 borderWH = 2
@@ -23,7 +24,6 @@ won = 0
 start_t = time.perf_counter()
 total_t = 0
 
-"""END OF GLOBAL VARIABLES"""
 
 class Cell:
     mine = False
@@ -51,7 +51,8 @@ class Minesweeper:
     last_clickedX = -1
     last_clickedY = -1
     
-    # Sets the number of cells in the game as width*height and the number of mines to be placed
+    #Constructor: Sets the number of cells in the game as width*height and the number of mines to be placed
+    #NOTE: There must be at least 9 safe cells, i.e. (mineCount <= width*height-9) is imposed, because the first clicked cell and its immediate surrounding will be generated as "safe"
     def __init__(self, width, height, mineCount):
         self.width = width
         self.height = height
@@ -63,11 +64,11 @@ class Minesweeper:
                 self.field[x].append([])
                 self.field[x][y] = Cell()
                              
-    # Updates a given cell with the count of neighbouring mines
+    #Updates a given cell with the count of neighbouring mines
     def updateCellNeighbourCount(self, x, y):
         self.field[x][y].neighbourMines = self.getCellNeighbourMineCount(x, y)
             
-    # Returns the tuples corresponding to each adjacent cell
+    #Returns the tuples corresponding to each adjacent cell
     def getNeighbouringIndices(self, x, y):
         neighbours = []
         if x > 0:
@@ -88,7 +89,7 @@ class Minesweeper:
                 neighbours.append((x+1,y+1))
         return neighbours
         
-    # Counts the number of surrounding mines
+    #Counts the number of surrounding mines
     def getCellNeighbourMineCount(self, x, y):
         mines = 0
         if x > 0:
@@ -120,7 +121,7 @@ class Minesweeper:
     def getCellFromTuple(self, t):
         return self.field[t[0]][t[1]]
     
-    # Resets the game state
+    #Resets the game state
     def resetField(self):
         self.flagCount = self.mineCount
         self.uncoveredCells = 0
@@ -136,7 +137,7 @@ class Minesweeper:
                 self.field[x][y].neighbourIndices = self.getNeighbouringIndices(x,y)
                 self.field[x][y].mineProbability = 0
     
-    # Generates the minefield, with no mine on safeX and safeY and one block radius surrounding it
+    #Generates the minefield, with no mine on safeX and safeY and one block radius surrounding it
     def generateField(self, safeX, safeY):
         minesToGenerate = self.mineCount
         while (minesToGenerate):
@@ -151,7 +152,7 @@ class Minesweeper:
                 self.field[x][y].neighbourMines = self.getCellNeighbourMineCount(x, y)
                 self.field[x][y].neighbourIndices = self.getNeighbouringIndices(x, y)
     
-    # Sets a flag at the select location
+    #Sets a flag at the select location
     def setFlag(self, x, y):
         if (self.field[x][y].clicked) or (self.gameOver) or (self.gameWon):
             return
@@ -162,8 +163,8 @@ class Minesweeper:
             self.field[x][y].marked = False
             self.flagCount += 1
     
-    # Uncovers all surrounding fields that do not contain a mine
-    # This is done via recursive calls of the click-method
+    #Uncovers all surrounding fields that do not contain a mine
+    #This is done via recursive calls of the click-method
     def uncoverNeighbours(self, x, y, ms_ai):
         if x > 0:
             if (not self.field[x-1][y].mine):
@@ -190,7 +191,7 @@ class Minesweeper:
                 if (not self.field[x+1][y+1].mine):
                     self.click(x+1, y+1, ms_ai)
     
-    # Clicks a field and updates the game state accordingly (explodes a mine if one is present, uncovers neighbours if there are no surrounding mines, etc)
+    #Clicks a field and updates the game state accordingly (explodes a mine if one is present, uncovers neighbours if there are no surrounding mines, etc)
     def click(self, x, y, ms_ai):
         if (self.gameOver) or (self.gameWon):
             return
@@ -232,19 +233,19 @@ class Minesweeper_AI:
 
     def __init__(self):
         pass
-# Makes a random move to start the game
+    
     def randomMove(self, ms):
         mv = (randrange(ms.width), randrange(ms.height))
         while ((ms.getCellFromTuple(mv).clicked) or (ms.getCellFromTuple(mv).mineProbability == 1)):
             mv = (randrange(ms.width), randrange(ms.height))
         return mv
-# 
+    
     def contains(self, small, big):
         return set(small).issubset(set(big))
-# 
+    
     def intersection(self, lst1, lst2): 
         return list(set(lst1) & set(lst2)) 
-# probabilities for each cell give the state of the board
+    
     def generateProbabilities(self, ms):
         flagsSet = (ms.mineCount-ms.flagCount)
         defaultProbability = (ms.flagCount) / (ms.width*ms.height-flagsSet-ms.uncoveredCells)
@@ -257,7 +258,7 @@ class Minesweeper_AI:
                 elif not ms.field[x][y].mineProbability == 1:
                     #Cell is not already known to be a mine, probability can be overridden
                     ms.field[x][y].mineProbability = defaultProbability
-        # Update by known cell neighbours
+        #Update by known cell neighbours
         for kd in self.knowledge:
             if (kd.cells != []):
                 newProbability = kd.mineCount / len(kd.cells)
@@ -269,7 +270,7 @@ class Minesweeper_AI:
                         if (ms.getCellFromTuple(cell).analyzed) and (ms.getCellFromTuple(cell).mineProbability < newProbability): #Cell has been analyzed before, but a new lower bound is found
                             ms.getCellFromTuple(cell).mineProbability = newProbability
     
-    # Returns the coordinate of the (non-clicked) cell with the lowest minimum mine probabilizy
+    #Returns the coordinate of the (non-clicked) cell with the lowest minimum mine probabilizy
     def getMinProbabilityCell(self, ms):
         minProb = 1
         cell = None
@@ -387,12 +388,12 @@ def drawMS(screen, font, ms):
                     screen.blit(srf, ((borderWH+(cellPixelWH+borderWH)*x+cellPixelWH//2.5,borderWH+(cellPixelWH+borderWH)*y+cellPixelWH//4)))
             elif (ms.field[x][y].clicked) and (not ms.field[x][y].mine):
                 pygame.draw.rect(screen, white, (borderWH+(cellPixelWH+borderWH)*x,borderWH+(cellPixelWH+borderWH)*y,cellPixelWH,cellPixelWH), 0) 
-                font.render(str(ms.field[x][y].neighbourMines), True, blue)
+                font.render(str(ms.field[x][y].neighbourMines), True, yellow)
                 if ms.field[x][y].neighbourMines > 0:
-                    srf = font.render(str(ms.field[x][y].neighbourMines), True, blue)
+                    srf = font.render(str(ms.field[x][y].neighbourMines), True, yellow)
                     screen.blit(srf, ((borderWH+(cellPixelWH+borderWH)*x+cellPixelWH//2.5,borderWH+(cellPixelWH+borderWH)*y+cellPixelWH//4)))
             else:
-                pygame.draw.rect(screen, black, (borderWH+(cellPixelWH+borderWH)*x,borderWH+(cellPixelWH+borderWH)*y,cellPixelWH,cellPixelWH), 0) 
+                pygame.draw.rect(screen, Dviolet, (borderWH+(cellPixelWH+borderWH)*x,borderWH+(cellPixelWH+borderWH)*y,cellPixelWH,cellPixelWH), 0) 
                 if (ms.field[x][y].marked):
                     srf = font.render("!", True, white)
                     screen.blit(srf, ((borderWH+(cellPixelWH+borderWH)*x+cellPixelWH//2.5,borderWH+(cellPixelWH+borderWH)*y+cellPixelWH//4)))
@@ -406,55 +407,43 @@ def mouseToField(x, y):
 def printText(ms, ms_ai, font, screen):
     
     if (ms.gameOver):
-        srf = font_text.render("BOOM - Game Over.", True, black)
-        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,10)))
+        srf = font_text.render("Game Over.", True, Dviolet)
+        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,10)))
     elif (ms.gameWon):
-        srf = font_text.render("Game Won!", True, black)
-        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,10)))
+        srf = font_text.render("Game Won.", True, Dviolet)
+        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,10)))
     else:
-        srf = font_text.render("Playing..", True, black)
-        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,10)))
+        srf = font_text.render("Playing", True, Dviolet)
+        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,10)))
         
-    srf = font_text.render("Flags: " + str(ms.flagCount), True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,40)))
+    srf = font_text.render("Flags: " + str(ms.flagCount), True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,40)))
     
-    srf = font_text.render("SESSION STATS", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,90)))
-    srf = font_text.render("Games: "+ str(won+lost), True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,110)))
+    srf = font_text.render("SESSION STATS", True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+60,160)))
+    srf = font_text.render("Games: "+ str(won+lost), True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,220)))
     if (won+lost>0):
         percentage = round((won/(won+lost))*100,2)
     else:
         percentage = "-" 
-    srf = font_text.render("Wins: "+ str(won) + ", "+str(percentage)+"%", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,130)))
-    srf = font_text.render("Losses: "+ str(lost), True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,150)))
+    srf = font_text.render("Wins: "+ str(won) + ", "+str(percentage)+"%", True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,180)))
+    srf = font_text.render("Losses: "+ str(lost), True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,200)))
     
-    srf = font_text.render("AI STATS", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,200)))
-    srf = font_text.render("Moves: "+ str(ms_ai.moves), True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,220)))
-    srf = font_text.render("Guesses: "+ str(ms_ai.guesses), True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,240)))
+    srf = font_text.render("AI STATS", True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+89,300)))
+    srf = font_text.render("Moves: "+ str(ms_ai.moves), True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,340)))
+    srf = font_text.render("Guesses: "+ str(ms_ai.guesses), True, Dviolet)
+    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+85,360)))
     if (won+lost > 0):
-        srf = font_text.render("Avg time/game: "+ str(round(total_t / (won+lost),2))+"s", True, black)
-        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,260)))
+        srf = font_text.render("Avg time/game: "+ str(round(total_t / (won+lost),2))+"s", True, Dviolet)
+        screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+40,380)))
         
-    srf = font_text.render("CONTROLS", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,310)))
-    srf = font_text.render("Left click to uncover", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,330)))
-    srf = font_text.render("Right click to set flag", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,350)))
-    srf = font_text.render("Spacebar to reset game", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,370))) 
-    srf = font_text.render("Enter for an AI move", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,390))) 
-    srf = font_text.render("L to toggle AI loop", True, black)
-    screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,410))) 
         
-    srf = font.render(str(fieldCoord[0]) + ", " + str(fieldCoord[1]), True, black)
+    srf = font.render(str(fieldCoord[0]) + ", " + str(fieldCoord[1]), True, Dviolet)
     screen.blit(srf, ((ms.width*(cellPixelWH+borderWH)+borderWH+10,ms.height*(cellPixelWH+borderWH)+borderWH-60)))
 
 pygame.init()
@@ -462,6 +451,7 @@ ms = Minesweeper(width, height, mineCount)
 font = pygame.font.SysFont("comicsansms", 20)
 font_text = pygame.font.SysFont("arialms", 30)
 screen = pygame.display.set_mode((ms.width*(cellPixelWH+borderWH)+borderWH+250, ms.height*(cellPixelWH+borderWH)+borderWH))
+
 
 running = True
 ai_loop = False
@@ -506,7 +496,7 @@ while running:
         if mv is not None:
             ms.click(mv[0],mv[1], ms_ai)
             print("=>"+str(mv))
-    screen.fill(green)
+    screen.fill(grey)
     drawMS(screen, font, ms)
     if (ms.gameOver) or (ms.gameWon):
         if (not waitForNG):
