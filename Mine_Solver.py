@@ -8,9 +8,9 @@ white = (255, 255, 255)
 black = (0, 0, 0)
 red = (255, 0, 0)
 dark_red = (200, 0, 0)
-green = (0, 255, 0)
+purple = (173, 138, 255)
 blue = (0, 0, 255)
-grey = (127, 127, 127)
+green = (181, 255, 138)
 
 cellPixelWH = 50
 borderWH = 2
@@ -507,7 +507,7 @@ while running:
         if mv is not None:
             ms.click(mv[0],mv[1], ms_ai)
             print("=>"+str(mv))
-    screen.fill(grey)
+    screen.fill(green)
     drawMS(screen, font, ms)
     if (ms.gameOver) or (ms.gameWon):
         if (not waitForNG):
